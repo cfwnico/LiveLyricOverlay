@@ -1,0 +1,5 @@
+<Project>
+  <PropertyGroup>
+    <IncludePath>$(MSBuildThisFileDirectory)..\third_party\wtl;$(IncludePath)</IncludePath>
+  </PropertyGroup>
+</Project>
