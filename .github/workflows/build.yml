@@ -1,0 +1,47 @@
+name: Build foo_livelyric Plugin
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-2022
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Build plugin
+        run: |
+          msbuild fb2k_sdk\foobar2000\foo_sample\foo_sample.sln `
+            /p:Configuration=Release `
+            /p:Platform=x86 `
+            /p:PlatformToolset=v143 `
+            /t:Build `
+            /m `
+            /verbosity:minimal
+
+      - name: Verify output
+        run: |
+          if (Test-Path "fb2k_sdk\foobar2000\foo_sample\Release\foo_livelyric.dll") {
+            Write-Host "BUILD SUCCESS: foo_livelyric.dll generated"
+            Get-Item "fb2k_sdk\foobar2000\foo_sample\Release\foo_livelyric.dll" | Format-List Name, Length, LastWriteTime
+          } else {
+            Write-Error "BUILD FAILED: foo_livelyric.dll not found"
+            Get-ChildItem "fb2k_sdk\foobar2000\foo_sample\Release\" -ErrorAction SilentlyContinue
+            exit 1
+          }
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: foo_livelyric
+          path: fb2k_sdk\foobar2000\foo_sample\Release\foo_livelyric.dll
+          if-no-files-found: error
