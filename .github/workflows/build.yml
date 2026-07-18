@@ -15,19 +15,13 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Checkout WTL
-        uses: actions/checkout@v4
-        with:
-          repository: Microsoft/WTL
-          path: wtl
-
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v2
 
       - name: Build plugin
         shell: pwsh
         run: |
-          $env:INCLUDE = "${{ github.workspace }}\wtl\Include;$env:INCLUDE"
+          $env:INCLUDE = "${{ github.workspace }}\third_party\wtl;$env:INCLUDE"
           msbuild fb2k_sdk\foobar2000\foo_sample\foo_sample.sln `
             /p:Configuration=Release `
             /p:Platform=x86 `
