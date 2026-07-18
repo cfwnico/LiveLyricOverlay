@@ -19,12 +19,16 @@ jobs:
         uses: microsoft/setup-msbuild@v2
 
       - name: Install WTL
+        shell: pwsh
         run: |
-          Invoke-WebRequest -Uri "https://sourceforge.net/projects/wtl/files/WTL%2010/WTL%2010.0.10320%20Release/WTL10.0.10320%20Release.zip/download" -OutFile "$env:RUNNER_TEMP\wtl.zip"
+          $url = "https://github.com/Microsoft/WTL/archive/refs/tags/10.0.10320.zip"
+          Invoke-WebRequest -Uri $url -OutFile "$env:RUNNER_TEMP\wtl.zip"
           Expand-Archive -Path "$env:RUNNER_TEMP\wtl.zip" -DestinationPath "$env:RUNNER_TEMP\wtl"
-          echo "WTL_INCLUDE=$env:RUNNER_TEMP\wtl\Include" >> $env:GITHUB_ENV
+          echo "WTL_INCLUDE=$env:RUNNER_TEMP\wtl\WTL-10.0.10320\Include" >> $env:GITHUB_ENV
+        timeout-minutes: 2
 
       - name: Build plugin
+        shell: pwsh
         run: |
           $env:INCLUDE = "$env:WTL_INCLUDE;$env:INCLUDE"
           msbuild fb2k_sdk\foobar2000\foo_sample\foo_sample.sln `
@@ -36,6 +40,7 @@ jobs:
             /verbosity:minimal
 
       - name: Verify output
+        shell: pwsh
         run: |
           if (Test-Path "fb2k_sdk\foobar2000\foo_sample\Release\foo_livelyric.dll") {
             Write-Host "BUILD SUCCESS: foo_livelyric.dll generated"
