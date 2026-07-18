@@ -21,7 +21,6 @@ jobs:
       - name: Build plugin
         shell: pwsh
         run: |
-          $env:INCLUDE = "${{ github.workspace }}\third_party\wtl;$env:INCLUDE"
           msbuild fb2k_sdk\foobar2000\foo_sample\foo_sample.sln `
             /p:Configuration=Release `
             /p:Platform=x86 `
