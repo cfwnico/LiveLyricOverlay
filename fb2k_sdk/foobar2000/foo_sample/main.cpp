@@ -74,7 +74,7 @@ IPCServer g_ipc;
 class play_callback_livelyric : public play_callback_static {
 public:
     unsigned get_flags() override {
-        return flag_on_playback_new_track | flag_on_playback_play | flag_on_playback_pause | flag_on_playback_stop | flag_on_playback_seek;
+        return flag_on_playback_new_track | flag_on_playback_starting | flag_on_playback_pause | flag_on_playback_stop | flag_on_playback_seek;
     }
 
     void on_playback_new_track(metadb_handle_ptr p_track) override {
@@ -95,15 +95,14 @@ public:
         g_ipc.SendEvent(BuildJsonMsg("new_track", 0.0, escaped.c_str()));
     }
 
-    void on_playback_starting(play_control::t_track_command p_command, bool p_paused) override {}
-    
-    void on_playback_play(double p_time) override {
-        g_ipc.SendEvent(BuildJsonMsg("play", p_time, ""));
+    void on_playback_starting(play_control::t_track_command p_command, bool p_paused) override {
+        if (!p_paused) {
+            g_ipc.SendEvent(BuildJsonMsg("play", 0.0, ""));
+        }
     }
     
     void on_playback_pause(bool p_state) override {
-        double pos = 0;
-        play_control::get()->playback_get_position(pos);
+        double pos = play_control::get()->playback_get_position();
         if (p_state) {
             g_ipc.SendEvent(BuildJsonMsg("pause", pos, ""));
         } else {
