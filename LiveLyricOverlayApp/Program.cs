@@ -105,9 +105,10 @@ namespace LiveLyricOverlayApp
             string text = "LiveLyricOverlay ♪";
             string translation = "";
 
-            if (_document != null && _document.Lines.Count > 0)
+            var doc = _document; // Thread-safe snapshot
+            if (doc != null && doc.Lines.Count > 0)
             {
-                var activeLine = _document.Lines.LastOrDefault(l => l.TimeMs <= currentMs);
+                var activeLine = doc.Lines.LastOrDefault(l => l.TimeMs <= currentMs);
                 if (activeLine != null)
                 {
                     text = activeLine.Text;

@@ -30,7 +30,9 @@ public:
         if (m_stop) return;
         m_stop = true;
         // Connect to unblock WaitNamedPipe
-        CallNamedPipeA("\\\\.\\pipe\\LiveLyricOverlayPipe", nullptr, 0, nullptr, 0, nullptr, 1);
+        HANDLE hClient = CreateFileA("\\\\.\\pipe\\LiveLyricOverlayPipe", GENERIC_READ | GENERIC_WRITE, 0, nullptr, OPEN_EXISTING, 0, nullptr);
+        if (hClient != INVALID_HANDLE_VALUE) CloseHandle(hClient);
+        
         if (m_thread) {
             WaitForSingleObject(m_thread, INFINITE);
             CloseHandle(m_thread);
