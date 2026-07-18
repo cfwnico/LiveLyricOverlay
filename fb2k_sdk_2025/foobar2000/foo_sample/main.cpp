@@ -1,8 +1,6 @@
 #include "stdafx.h"
 #include <string>
-#include <thread>
-#include <mutex>
-#include <atomic>
+#include <windows.h>
 
 DECLARE_COMPONENT_VERSION("LiveLyricOverlay Sync", "1.0", "Sends playback state to LiveLyricOverlay via Named Pipes");
 
@@ -15,9 +13,17 @@ std::string BuildJsonMsg(const char* eventType, double time, const char* filePat
 
 class IPCServer {
 public:
-    IPCServer() : m_thread(&IPCServer::Worker, this) {}
+    IPCServer() {
+        InitializeCriticalSection(&m_cs);
+        m_stop = false;
+        m_connected = false;
+        m_pipe = INVALID_HANDLE_VALUE;
+        m_thread = CreateThread(nullptr, 0, ThreadProc, this, 0, nullptr);
+    }
+    
     ~IPCServer() {
         Stop();
+        DeleteCriticalSection(&m_cs);
     }
 
     void Stop() {
@@ -25,19 +31,30 @@ public:
         m_stop = true;
         // Connect to unblock WaitNamedPipe
         CallNamedPipeA("\\\\.\\pipe\\LiveLyricOverlayPipe", nullptr, 0, nullptr, 0, nullptr, 1);
-        if (m_thread.joinable()) m_thread.join();
+        if (m_thread) {
+            WaitForSingleObject(m_thread, INFINITE);
+            CloseHandle(m_thread);
+            m_thread = nullptr;
+        }
     }
 
     void SendEvent(const std::string& msg) {
-        std::lock_guard<std::mutex> lock(m_mutex);
+        EnterCriticalSection(&m_cs);
         if (m_connected && m_pipe != INVALID_HANDLE_VALUE) {
             DWORD written = 0;
             WriteFile(m_pipe, msg.c_str(), msg.length(), &written, nullptr);
             FlushFileBuffers(m_pipe);
         }
+        LeaveCriticalSection(&m_cs);
     }
 
 private:
+    static DWORD WINAPI ThreadProc(LPVOID lpParam) {
+        IPCServer* self = (IPCServer*)lpParam;
+        self->Worker();
+        return 0;
+    }
+
     void Worker() {
         while (!m_stop) {
             HANDLE pipe = CreateNamedPipeA("\\\\.\\pipe\\LiveLyricOverlayPipe",
@@ -46,16 +63,15 @@ private:
                 1, 4096, 4096, 0, nullptr);
             
             if (pipe == INVALID_HANDLE_VALUE) {
-                Sleep(1000);
+                Sleep(100);
                 continue;
             }
 
             if (ConnectNamedPipe(pipe, nullptr) || GetLastError() == ERROR_PIPE_CONNECTED) {
-                {
-                    std::lock_guard<std::mutex> lock(m_mutex);
-                    m_pipe = pipe;
-                    m_connected = true;
-                }
+                EnterCriticalSection(&m_cs);
+                m_pipe = pipe;
+                m_connected = true;
+                LeaveCriticalSection(&m_cs);
                 
                 // Wait until pipe breaks
                 while (!m_stop && m_connected) {
@@ -66,21 +82,20 @@ private:
                     }
                 }
                 
-                {
-                    std::lock_guard<std::mutex> lock(m_mutex);
-                    m_connected = false;
-                    m_pipe = INVALID_HANDLE_VALUE;
-                }
+                EnterCriticalSection(&m_cs);
+                m_connected = false;
+                m_pipe = INVALID_HANDLE_VALUE;
+                LeaveCriticalSection(&m_cs);
             }
             CloseHandle(pipe);
         }
     }
 
-    std::mutex m_mutex;
-    std::atomic<bool> m_stop{false};
-    std::atomic<bool> m_connected{false};
-    HANDLE m_pipe = INVALID_HANDLE_VALUE;
-    std::thread m_thread;
+    CRITICAL_SECTION m_cs;
+    bool m_stop;
+    bool m_connected;
+    HANDLE m_pipe;
+    HANDLE m_thread;
 };
 
 static IPCServer& GetIpc() {
