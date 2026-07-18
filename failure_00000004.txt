@@ -1,0 +1,385 @@
+﻿Illegal operation:
+Code: C0000005h, flags: 00000000h, address: 00007FFE03033028h
+Access violation, operation: read, address: 0000000000000000h
+
+Call path:
+app_mainloop=>on_playback_starting
+
+Code bytes (00007FFE03033028h):
+00007FFE03032FE8h:  48 8B 4C 24 30 48 33 CC E8 BB FE 03 00 48 8B 5C
+00007FFE03032FF8h:  24 70 48 8B 74 24 78 48 83 C4 40 41 5F 41 5E 5F
+00007FFE03033008h:  C3 4D 85 F6 75 28 4C 8D 79 48 FF 15 78 30 04 00
+00007FFE03033018h:  41 39 07 0F 84 AD 00 00 00 48 8D 4E 08 48 8B 01
+00007FFE03033028h:  48 8B 00 FF 15 97 36 04 00 E9 98 00 00 00 48 83
+00007FFE03033038h:  3A 00 7C 6E 75 06 83 7A 08 00 7E 66 BA 01 00 00
+00007FFE03033048h:  00 48 8D 4C 24 20 E8 ED 0A 00 00 48 8B 44 24 20
+00007FFE03033058h:  49 3B 06 7C 14 0F 85 B3 00 00 00 41 8B 46 08 39
+
+Registers:
+RAX: 0000000000000000, RBX: 00000022BE4FEE60, RCX: 000001277A08B9E8, RDX: 0000000000000000
+RSI: 000001277A08B9E0, RDI: 0000000000000000, RBP: 000001277A27E728, RSP: 00000022BE4FED90
+
+Timestamp:
+162594ms
+
+Crash location:
+Module: MSVCP140
+Offset: 13028h
+Symbol: "Thrd_yield" (+B8h)
+
+Loaded modules:
+foobar2000                       loaded at 00007FF6158F0000h - 00007FF615D27000h
+ntdll                            loaded at 00007FFE9B0A0000h - 00007FFE9B306000h
+KERNEL32                         loaded at 00007FFE9A200000h - 00007FFE9A2C9000h
+KERNELBASE                       loaded at 00007FFE988F0000h - 00007FFE98CEA000h
+SHLWAPI                          loaded at 00007FFE9AC80000h - 00007FFE9ACE7000h
+ucrtbase                         loaded at 00007FFE987A0000h - 00007FFE988EC000h
+COMCTL32                         loaded at 00007FFE7DB20000h - 00007FFE7DDB2000h
+WINMM                            loaded at 00007FFE88A30000h - 00007FFE88A66000h
+msvcrt                           loaded at 00007FFE9AE10000h - 00007FFE9AEB9000h
+USER32                           loaded at 00007FFE9A9F0000h - 00007FFE9ABB7000h
+GDI32                            loaded at 00007FFE9A8A0000h - 00007FFE9A8CB000h
+win32u                           loaded at 00007FFE98CF0000h - 00007FFE98D17000h
+ADVAPI32                         loaded at 00007FFE99560000h - 00007FFE99616000h
+gdi32full                        loaded at 00007FFE98500000h - 00007FFE9862B000h
+UxTheme                          loaded at 00007FFE94650000h - 00007FFE946FA000h
+sechost                          loaded at 00007FFE9ABC0000h - 00007FFE9AC6A000h
+msvcp_win                        loaded at 00007FFE986F0000h - 00007FFE98793000h
+combase                          loaded at 00007FFE98FF0000h - 00007FFE99373000h
+RPCRT4                           loaded at 00007FFE9A8D0000h - 00007FFE9A9E8000h
+SHELL32                          loaded at 00007FFE998D0000h - 00007FFE9A054000h
+ole32                            loaded at 00007FFE9AEC0000h - 00007FFE9B058000h
+OLEAUT32                         loaded at 00007FFE9A330000h - 00007FFE9A409000h
+CRYPT32                          loaded at 00007FFE98D20000h - 00007FFE98E98000h
+sqlite3                          loaded at 00007FFE030B0000h - 00007FFE031A4000h
+zlib1                            loaded at 00007FFE7C540000h - 00007FFE7C55D000h
+shared                           loaded at 00007FFE7C220000h - 00007FFE7C248000h
+MSVCP140                         loaded at 00007FFE03020000h - 00007FFE030AE000h
+MSIMG32                          loaded at 00007FFE80520000h - 00007FFE80528000h
+OLEACC                           loaded at 00007FFE7DAA0000h - 00007FFE7DB16000h
+gdiplus                          loaded at 00007FFE7DE80000h - 00007FFE7E058000h
+WINHTTP                          loaded at 00007FFE91A70000h - 00007FFE91B99000h
+imagehlp                         loaded at 00007FFE98FA0000h - 00007FFE98FC0000h
+Secur32                          loaded at 00007FFE93E30000h - 00007FFE93E3D000h
+VCRUNTIME140_1                   loaded at 00007FFE2AEE0000h - 00007FFE2AEEC000h
+VCRUNTIME140                     loaded at 00007FFE2AEC0000h - 00007FFE2AEDB000h
+COMDLG32                         loaded at 00007FFE9A0F0000h - 00007FFE9A1E2000h
+shcore                           loaded at 00007FFE98EA0000h - 00007FFE98F96000h
+dbghelp                          loaded at 00007FFE956F0000h - 00007FFE95932000h
+SSPICLI                          loaded at 00007FFE97320000h - 00007FFE97369000h
+dbgcore                          loaded at 00007FFE7C1C0000h - 00007FFE7C1FB000h
+IMM32                            loaded at 00007FFE9A2F0000h - 00007FFE9A322000h
+kernel.appcore                   loaded at 00007FFE97080000h - 00007FFE9709B000h
+bcryptPrimitives                 loaded at 00007FFE98450000h - 00007FFE984F8000h
+MSCTF                            loaded at 00007FFE996A0000h - 00007FFE997FD000h
+foo_ui_std                       loaded at 00007FFD80480000h - 00007FFD806BC000h
+dwmapi                           loaded at 00007FFE94770000h - 00007FFE9479F000h
+foo_dsd_processor                loaded at 00007FFD7FBB0000h - 00007FFD8047F000h
+MSVCP140_ATOMIC_WAIT             loaded at 00007FFE7C640000h - 00007FFE7C654000h
+foo_out_asio                     loaded at 0000000180000000h - 0000000180020000h
+foo_fileops                      loaded at 00007FFE7C5B0000h - 00007FFE7C637000h
+foo_unpack                       loaded at 00007FFE08300000h - 00007FFE08398000h
+foo_input_tta                    loaded at 00007FFE2AE00000h - 00007FFE2AE3D000h
+foo_input_sacd                   loaded at 00007FFD7F2F0000h - 00007FFD7FBAF000h
+foo_playcount                    loaded at 00007FFE082B0000h - 00007FFE082F1000h
+foo_uie_eslyric                  loaded at 00007FFD7ECD0000h - 00007FFD7F2E4000h
+d2d1                             loaded at 00007FFE94CA0000h - 00007FFE952DA000h
+VERSION                          loaded at 00007FFE90C90000h - 00007FFE90C9B000h
+DWrite                           loaded at 00007FFE952F0000h - 00007FFE95557000h
+WININET                          loaded at 00007FFE73220000h - 00007FFE734B5000h
+foo_input_std                    loaded at 00007FFD7EA90000h - 00007FFD7ECCD000h
+MSACM32                          loaded at 00007FFE5C9A0000h - 00007FFE5C9C1000h
+avformat-fb2k-60                 loaded at 00007FFE2ADC0000h - 00007FFE2ADF1000h
+avcodec-fb2k-60                  loaded at 00007FFD7E860000h - 00007FFD7EA88000h
+avutil-fb2k-58                   loaded at 00007FFD7E660000h - 00007FFD7E857000h
+bcrypt                           loaded at 00007FFE982B0000h - 00007FFE982DA000h
+foo_input_dvda                   loaded at 00007FFD80BE0000h - 00007FFD80CCF000h
+foo_livelyric                    loaded at 0000012779FF0000h - 000001277A097000h
+foo_midi                         loaded at 00007FFD7E2C0000h - 00007FFD7E651000h
+bass                             loaded at 00007FFE032B0000h - 00007FFE03308000h
+bassmidi                         loaded at 00007FFE02F90000h - 00007FFE03016000h
+foo_dsd_converter                loaded at 00007FFDF1A90000h - 00007FFDF1B21000h
+foo_freedb2                      loaded at 00007FFE064B0000h - 00007FFE064F8000h
+foo_converter                    loaded at 00007FFD7E1E0000h - 00007FFD7E2B5000h
+foo_dsp_std                      loaded at 00007FFE031D0000h - 00007FFE03213000h
+foo_out_asio+dsd                 loaded at 00007FFE01360000h - 00007FFE013D6000h
+foo_dsp_eq                       loaded at 00007FFDF0F30000h - 00007FFDF0FBA000h
+atlthunk                         loaded at 00007FFE60540000h - 00007FFE6054D000h
+WindowsCodecs                    loaded at 00007FFE92EE0000h - 00007FFE9310C000h
+clbcatq                          loaded at 00007FFE9AD50000h - 00007FFE9ADFE000h
+dataexchange                     loaded at 00007FFE5D3D0000h - 00007FFE5D42C000h
+twinapi.appcore                  loaded at 00007FFE8FB00000h - 00007FFE8FD4F000h
+TextShaping                      loaded at 00007FFE78680000h - 00007FFE78733000h
+textinputframework               loaded at 00007FFE77970000h - 00007FFE77AB8000h
+CoreMessaging                    loaded at 00007FFE939A0000h - 00007FFE93AC5000h
+CoreUIComponents                 loaded at 00007FFE910A0000h - 00007FFE91384000h
+wintypes                         loaded at 00007FFE91650000h - 00007FFE917BA000h
+CRYPTBASE                        loaded at 00007FFE97830000h - 00007FFE9783C000h
+wetype_tip                       loaded at 00007FFE2BC60000h - 00007FFE2BEC7000h
+windows.storage                  loaded at 00007FFE95ED0000h - 00007FFE96750000h
+profapi                          loaded at 00007FFE982E0000h - 00007FFE98309000h
+CRYPTSP                          loaded at 00007FFE97A60000h - 00007FFE97A7B000h
+rsaenh                           loaded at 00007FFE96FE0000h - 00007FFE97019000h
+wetype_tip_core                  loaded at 00007FFE2B340000h - 00007FFE2B7FB000h
+CrashRpt1500                     loaded at 00007FFE2B1C0000h - 00007FFE2B26C000h
+ktmw32                           loaded at 00007FFE6D370000h - 00007FFE6D37B000h
+input                            loaded at 00007FFE2B0C0000h - 00007FFE2B125000h
+WS2_32                           loaded at 00007FFE979D0000h - 00007FFE97A50000h
+USERENV                          loaded at 00007FFE97680000h - 00007FFE976B3000h
+msiltcfg                         loaded at 00007FFE6D340000h - 00007FFE6D34B000h
+msi                              loaded at 00007FFE6C280000h - 00007FFE6C5C9000h
+PP-UWP-Interop                   loaded at 00007FFE7C5A0000h - 00007FFE7C5AB000h
+vccorlib140                      loaded at 00007FFDCBBE0000h - 00007FFDCBC33000h
+Windows.Media.Playback.Backgrou  loaded at 00007FFD7E100000h - 00007FFD7E1D5000h
+cfgmgr32                         loaded at 00007FFE98020000h - 00007FFE98071000h
+MFPlat                           loaded at 00007FFE75EF0000h - 00007FFE76107000h
+RTWorkQ                          loaded at 00007FFE75930000h - 00007FFE7596C000h
+Windows.Media.MediaControl       loaded at 00007FFE0A480000h - 00007FFE0A50E000h
+MMDevAPI                         loaded at 00007FFE88BE0000h - 00007FFE88C83000h
+MFMediaEngine                    loaded at 00007FFD7DCD0000h - 00007FFD7E0FB000h
+XmlLite                          loaded at 00007FFE92010000h - 00007FFE92053000h
+powrprof                         loaded at 00007FFE97DF0000h - 00007FFE97E4E000h
+UMPDC                            loaded at 00007FFE97D90000h - 00007FFE97DA4000h
+DEVOBJ                           loaded at 00007FFE98080000h - 00007FFE980AD000h
+AUDIOSES                         loaded at 00007FFE724E0000h - 00007FFE72694000h
+Windows.UI                       loaded at 00007FFE7A340000h - 00007FFE7A49A000h
+Windows.Media.Devices            loaded at 00007FFE82420000h - 00007FFE82513000h
+Windows.Media.Playback.ProxyStu  loaded at 00007FFE7C580000h - 00007FFE7C59A000h
+OneCoreUAPCommonProxyStub        loaded at 00007FFE893F0000h - 00007FFE89A47000h
+explorerframe                    loaded at 00007FFE60210000h - 00007FFE60503000h
+
+Stack dump analysis:
+Address: 00007FFE987A50D9h (ucrtbase+50D9h), symbol: "malloc_base" (+39h)
+Address: 000001277A05F930h (foo_livelyric+6F930h), symbol: "foobar2000_get_interface" (+1FD60h)
+Address: 000001277A04EC8Bh (foo_livelyric+5EC8Bh), symbol: "foobar2000_get_interface" (+F0BBh)
+Address: 000001277A0074BAh (foo_livelyric+174BAh)
+Address: 000001277A008653h (foo_livelyric+18653h)
+Address: 000001277A007C04h (foo_livelyric+17C04h)
+Address: 000001277A05C940h (foo_livelyric+6C940h), symbol: "foobar2000_get_interface" (+1CD70h)
+Address: 00007FFE9B0BAA62h (ntdll+1AA62h), symbol: "RtlAllocateHeap" (+AD2h)
+Address: 00007FFE9B212990h (ntdll+172990h), symbol: "memset" (+1960h)
+Address: 00007FFE0A486620h (Windows.Media.MediaControl+6620h)
+Address: 00007FFE9B0C4C5Ah (ntdll+24C5Ah), symbol: "TpAllocWork" (+DAh)
+Address: 00007FFE9902E3B1h (combase+3E3B1h), symbol: "CoInitializeEx" (+1231h)
+Address: 00007FFE9B212990h (ntdll+172990h), symbol: "memset" (+1960h)
+Address: 00007FFE9B212070h (ntdll+172070h), symbol: "memset" (+1040h)
+Address: 00007FFE989CD792h (KERNELBASE+DD792h), symbol: "CreateThreadpoolWork" (+22h)
+Address: 00007FFE989EB440h (KERNELBASE+FB440h), symbol: "SetConsoleCtrlHandler" (+3E0h)
+Address: 00007FFE0A4A68F6h (Windows.Media.MediaControl+268F6h), symbol: "DllGetClassObject" (+F006h)
+Address: 00007FFE9B0EE4B3h (ntdll+4E4B3h), symbol: "RtlAcquireSRWLockExclusive" (+383h)
+Address: 00007FFE987A50D9h (ucrtbase+50D9h), symbol: "malloc_base" (+39h)
+Address: 00007FFE0A493E37h (Windows.Media.MediaControl+13E37h), symbol: "DllGetActivationFactory" (+DD7h)
+Address: 00007FFE987AADA0h (ucrtbase+ADA0h), symbol: "malloc" (+0h)
+Address: 00007FFE987AAC5Dh (ucrtbase+AC5Dh), symbol: "o___stdio_common_vswprintf" (+35Dh)
+Address: 00007FFE987A50D9h (ucrtbase+50D9h), symbol: "malloc_base" (+39h)
+Address: 00007FFE9B0A9400h (ntdll+9400h), symbol: "RtlRunOnceExecuteOnce" (+80h)
+Address: 00007FFE0A494C2Fh (Windows.Media.MediaControl+14C2Fh), symbol: "DllGetActivationFactory" (+1BCFh)
+Address: 00007FFE0A492844h (Windows.Media.MediaControl+12844h)
+Address: 00007FF615BAB7F3h (foobar2000+2BB7F3h)
+Address: 00007FFE0A4D7D38h (Windows.Media.MediaControl+57D38h), symbol: "CreateRenderAudioStateMonitorForCategoryAndDeviceRole" (+1DFC8h)
+Address: 00007FFE988D98B0h (ucrtbase+1398B0h), symbol: "mbcasemap" (+D0h)
+Address: 00007FF615A50F63h (foobar2000+160F63h)
+Address: 00007FFE0A48981Dh (Windows.Media.MediaControl+981Dh)
+Address: 00007FFE0A487367h (Windows.Media.MediaControl+7367h)
+Address: 00007FF61595AEA6h (foobar2000+6AEA6h)
+Address: 00007FFE0A486FD9h (Windows.Media.MediaControl+6FD9h)
+Address: 00007FF61595E005h (foobar2000+6E005h)
+Address: 00007FFE7C5A1894h (PP-UWP-Interop+1894h)
+Address: 00007FF615A3FBD9h (foobar2000+14FBD9h)
+Address: 00007FF615C9C048h (foobar2000+3AC048h)
+Address: 00007FF615CAB13Ah (foobar2000+3BB13Ah)
+Address: 00007FF615A41E00h (foobar2000+151E00h)
+Address: 00007FF615CAB166h (foobar2000+3BB166h)
+Address: 00007FF615CAB167h (foobar2000+3BB167h)
+Address: 00007FF615A42E90h (foobar2000+152E90h)
+Address: 00007FF615A43875h (foobar2000+153875h)
+Address: 00007FF615BFFDD8h (foobar2000+30FDD8h)
+Address: 00007FF615A629D1h (foobar2000+1729D1h)
+Address: 00007FF615A62A23h (foobar2000+172A23h)
+Address: 00007FF615A67B46h (foobar2000+177B46h)
+Address: 00007FFD80573BC1h (foo_ui_std+F3BC1h)
+Address: 00007FFD80578ACEh (foo_ui_std+F8ACEh)
+Address: 00007FFD8061DCD8h (foo_ui_std+19DCD8h), symbol: "foobar2000_get_interface" (+4B478h)
+Address: 00007FFD805C068Fh (foo_ui_std+14068Fh)
+Address: 00007FFD804C2BC3h (foo_ui_std+42BC3h)
+Address: 00007FFD80581E1Dh (foo_ui_std+101E1Dh)
+Address: 00007FFD80575925h (foo_ui_std+F5925h)
+Address: 00007FFD8050F944h (foo_ui_std+8F944h)
+Address: 00007FFD80575925h (foo_ui_std+F5925h)
+Address: 00007FFD8058362Fh (foo_ui_std+10362Fh)
+Address: 00007FFD8058362Fh (foo_ui_std+10362Fh)
+Address: 00007FFD80583554h (foo_ui_std+103554h)
+Address: 00007FFD80491C6Ah (foo_ui_std+11C6Ah)
+Address: 00007FFE60541C78h (atlthunk+1C78h), symbol: "AtlThunk_DataToCode" (+1B8h)
+Address: 00007FFE9A9FC396h (USER32+C396h), symbol: "CallWindowProcW" (+6A6h)
+Address: 00007FFE9A9FBC1Ch (USER32+BC1Ch), symbol: "SendMessageW" (+ACCh)
+Address: 00007FFE9A9FC172h (USER32+C172h), symbol: "CallWindowProcW" (+482h)
+Address: 00007FFE9A9FC569h (USER32+C569h), symbol: "CallWindowProcW" (+879h)
+Address: 00007FFE9AA40A9Fh (USER32+50A9Fh), symbol: "GetLastActivePopup" (+25Fh)
+Address: 00007FFE9A9FC172h (USER32+C172h), symbol: "CallWindowProcW" (+482h)
+Address: 00007FFE60541C60h (atlthunk+1C60h), symbol: "AtlThunk_DataToCode" (+1A0h)
+Address: 00007FFE9A9FA7EDh (USER32+A7EDh), symbol: "IsWindowUnicode" (+3CDh)
+Address: 00007FFE60541C60h (atlthunk+1C60h), symbol: "AtlThunk_DataToCode" (+1A0h)
+Address: 00007FFE9AA040BBh (USER32+140BBh), symbol: "IsDialogMessageW" (+13Bh)
+Address: 00007FFE98CF1344h (win32u+1344h), symbol: "NtUserGetMessage" (+14h)
+Address: 00007FFD805A35F2h (foo_ui_std+1235F2h)
+Address: 00007FFE9AA2B352h (USER32+3B352h), symbol: "GetMessageW" (+22h)
+Address: 00007FF615CAB100h (foobar2000+3BB100h)
+Address: 00007FF6159F4492h (foobar2000+104492h)
+Address: 00007FFD805A3633h (foo_ui_std+123633h)
+Address: 00007FF615CAB0FFh (foobar2000+3BB0FFh)
+Address: 00007FF615CAB100h (foobar2000+3BB100h)
+Address: 00007FF6159F4345h (foobar2000+104345h)
+Address: 00007FF615CAB100h (foobar2000+3BB100h)
+Address: 00007FF615C14A00h (foobar2000+324A00h)
+Address: 00007FF615CAB0FFh (foobar2000+3BB0FFh)
+Address: 00007FF6159F67B9h (foobar2000+1067B9h)
+Address: 00007FF615C055C0h (foobar2000+3155C0h)
+Address: 00007FF6159F65B4h (foobar2000+1065B4h)
+Address: 00007FF615BEFF90h (foobar2000+2FFF90h)
+Address: 00007FF615C9C448h (foobar2000+3AC448h)
+Address: 00007FF615BABA24h (foobar2000+2BBA24h)
+Address: 00007FF615C055C0h (foobar2000+3155C0h)
+Address: 00007FF6159F65B4h (foobar2000+1065B4h)
+Address: 00007FF615BAC032h (foobar2000+2BC032h)
+Address: 00007FFE9A22E957h (KERNEL32+2E957h), symbol: "BaseThreadInitThunk" (+17h)
+Address: 00007FFE9B127C1Ch (ntdll+87C1Ch), symbol: "RtlUserThreadStart" (+2Ch)
+
+Environment:
+App: foobar2000 v2.1.4
+Arch: x64
+UI: 默认用户界面 2.1.4
+
+Components:
+Core (2024-04-21 08:30:14 UTC)
+    foobar2000 核心 2.1.4
+foo_converter (2024-04-21 08:15:00 UTC)
+    转换器 2.1.4
+foo_dsd_converter (2023-11-24 05:09:22 UTC)
+    DSD 转换器 0.3.0
+foo_dsd_processor (2024-02-06 13:41:38 UTC)
+    DSD 处理器 1.3.2
+foo_dsp_eq (2024-04-21 08:15:24 UTC)
+    均衡器 1.2.3
+foo_dsp_std (2024-04-21 08:15:42 UTC)
+    标准 DSP 组 2.1.4
+foo_fileops (2024-04-21 08:21:22 UTC)
+    文件操作 2.1.4
+foo_freedb2 (2024-04-21 08:16:40 UTC)
+    在线标签获取器 0.9
+foo_input_dvda (2024-04-21 11:50:00 UTC)
+    DVD-Audio 解码器 0.7.3
+foo_input_sacd (2024-02-24 01:29:00 UTC)
+    SACD 解码器 1.5.11
+foo_input_std (2024-04-21 08:22:22 UTC)
+    CD 音频解码器 2.1.4
+    FFmpeg 解码器 6.0
+    FLAC 解码器 1.4.3
+    Monkey's Audio 解码器 10.30
+    Opus 解码器 1.4
+    标准输入组 2.1.4
+foo_input_tta (2023-12-26 15:40:20 UTC)
+    TTA 音频解码� 4.0.2
+foo_livelyric (2026-07-18 06:50:14 UTC)
+    LiveLyricOverlay Sync 1.0
+foo_midi (2024-09-18 02:19:18 UTC)
+    MIDI Player 2.15.1.0
+foo_out_asio (2023-12-05 19:11:00 UTC)
+    ASIO 输出 2.2.2
+foo_out_asio+dsd (2023-12-01 10:36:48 UTC)
+    ASIO+DSD 输出 0.3.8
+foo_playcount (2024-02-21 04:53:16 UTC)
+    播放统计信息 3.1.5
+foo_ui_std (2024-04-21 08:30:14 UTC)
+    专辑列表 2.1.4
+    文件完整性验证 2.1.4
+    解码速度测试 2.1.4
+    默认用户界面 2.1.4
+foo_uie_eslyric (2023-12-24 13:32:36 UTC)
+    ESLyric 0.5.4.1028 (Beta)
+foo_unpack (2024-04-21 08:19:00 UTC)
+    ZIP/GZIP/RAR/7Z 读取器 2.1.4
+
+Recent events:
+[110ms] 预加载组件
+[110ms] 加载 DLL : D:\Program Files\foobar2000\components\foo_ui_std.dll
+[110ms] Component : foo_ui_std API 81
+[110ms] 已添加 113 个组件
+[110ms] 加载 DLL : D:\Program Files\foobar2000\user-components-x64\foo_dsd_processor\foo_dsd_processor.dll
+[110ms] Component : foo_dsd_processor API 80
+[110ms] 已添加 5 个组件
+[110ms] 加载 DLL : D:\Program Files\foobar2000\user-components-x64\foo_out_asio\foo_out_asio.dll
+[110ms] Component : foo_out_asio API 80
+[110ms] 已添加 3 个组件
+[110ms] 加载 DLL : D:\Program Files\foobar2000\components\foo_fileops.dll
+[110ms] Component : foo_fileops API 81
+[110ms] 已添加 18 个组件
+[110ms] 加载 DLL : D:\Program Files\foobar2000\components\foo_unpack.dll
+[110ms] Component : foo_unpack API 81
+[110ms] 已添加 8 个组件
+[110ms] 加载 DLL : D:\Program Files\foobar2000\user-components-x64\foo_input_tta\foo_input_tta.dll
+[110ms] Component : foo_input_tta API 80
+[110ms] 已添加 8 个组件
+[110ms] 加载 DLL : D:\Program Files\foobar2000\user-components-x64\foo_input_sacd\foo_input_sacd.dll
+[110ms] Component : foo_input_sacd API 80
+[110ms] 已添加 11 个组件
+[110ms] 加载 DLL : D:\Program Files\foobar2000\user-components-x64\foo_playcount\foo_playcount.dll
+[110ms] Component : foo_playcount API 80
+[110ms] 已添加 24 个组件
+[110ms] 加载 DLL : D:\Program Files\foobar2000\user-components-x64\foo_uie_eslyric\foo_uie_eslyric.dll
+[110ms] Component : foo_uie_eslyric API 80
+[110ms] 已添加 33 个组件
+[110ms] 加载 DLL : D:\Program Files\foobar2000\components\foo_input_std.dll
+[110ms] Component : foo_input_std API 81
+[110ms] 已添加 195 个组件
+[110ms] 加载 DLL : D:\Program Files\foobar2000\user-components-x64\foo_input_dvda\foo_input_dvda.dll
+[110ms] Component : foo_input_dvda API 80
+[110ms] 已添加 11 个组件
+[110ms] 加载 DLL : D:\Program Files\foobar2000\user-components-x64\foo_livelyric\foo_livelyric.dll
+[110ms] Component : foo_livelyric API 80
+[110ms] 已添加 29 个组件
+[110ms] 加载 DLL : D:\Program Files\foobar2000\user-components-x64\foo_midi\foo_midi.dll
+[125ms] Component : foo_midi API 80
+[125ms] 已添加 43 个组件
+[125ms] 加载 DLL : D:\Program Files\foobar2000\user-components-x64\foo_dsd_converter\foo_dsd_converter.dll
+[125ms] Component : foo_dsd_converter API 80
+[125ms] 已添加 3 个组件
+[125ms] 加载 DLL : D:\Program Files\foobar2000\components\foo_freedb2.dll
+[125ms] Component : foo_freedb2 API 81
+[125ms] 已添加 9 个组件
+[125ms] 加载 DLL : D:\Program Files\foobar2000\components\foo_converter.dll
+[125ms] Component : foo_converter API 81
+[125ms] 已添加 40 个组件
+[125ms] 加载 DLL : D:\Program Files\foobar2000\components\foo_dsp_std.dll
+[125ms] Component : foo_dsp_std API 81
+[125ms] 已添加 19 个组件
+[125ms] 加载 DLL : D:\Program Files\foobar2000\user-components-x64\foo_out_asio+dsd\foo_out_asio+dsd.dll
+[125ms] Component : foo_out_asio+dsd API 80
+[125ms] 已添加 5 个组件
+[125ms] 加载 DLL : D:\Program Files\foobar2000\components\foo_dsp_eq.dll
+[125ms] Component : foo_dsp_eq API 81
+[125ms] 已添加 6 个组件
+[125ms] Total: 947 services, 165 classes
+[125ms] 组件加载用时: 0:00.022508
+[141ms] 预读配置
+[141ms] 配置读取用时: 0:00.002101
+[141ms] foobar2000 v2.1.4 x64 [便携]
+[141ms] 列表 #0 加载用时:0:00.000663
+[141ms] 媒体库扫描问题: "D:\OneDrive\CFW-个人文件\Music", 原因: 未找到文件
+[141ms] 文件夹监视失败: 未找到文件
+[281ms] 用户界面初始化用时: 0:00.109466
+[281ms] 处理命令行
+[281ms] initquit::init entry
+[281ms] FFmpeg 版本: 6.0
+[281ms] Sample component: on_init()
+[281ms] initquit::init exit
+[281ms] 启动用时 : 0:00.287847
+[313ms] 媒体库初始化于: 0:00.312689
+[160875ms] setConfigBlob(cfg_var.7D53C550-CDA5-4C83-A030-1024B40417BC,532 字节)
+
+
+机器规格:
+系统: Windows 10.0.26200 x64
+CPU: 12th Gen Intel(R) Core(TM) i5-12400F, features: MMX SSE SSE2 SSE3 SSE4.1 SSE4.2 AVX LZCNT
+CPU 线程: 12
+音频: Realtek Digital Output (Realtek High Definition Audio); P326MV MAX (NVIDIA High Definition Audio); 扬声器 (Realtek High Definition Audio); 耳机 (CX31993+MAX97220 PRO)

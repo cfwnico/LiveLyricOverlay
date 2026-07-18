@@ -1,4 +1,5 @@
-#include "stdafx.h"
+#include "../foobar2000/SDK/foobar2000.h"
+#include <windows.h>
 #include <string>
 #include <thread>
 #include <mutex>
@@ -35,39 +36,31 @@ public:
 private:
     void Worker() {
         while (!m_stop) {
-            HANDLE pipe = CreateNamedPipeA("\\\\.\\pipe\\LiveLyricOverlayPipe",
+            m_pipe = CreateNamedPipeA("\\\\.\\pipe\\LiveLyricOverlayPipe",
                 PIPE_ACCESS_OUTBOUND,
                 PIPE_TYPE_MESSAGE | PIPE_READMODE_MESSAGE | PIPE_WAIT,
                 1, 4096, 4096, 0, nullptr);
             
-            if (pipe == INVALID_HANDLE_VALUE) {
+            if (m_pipe == INVALID_HANDLE_VALUE) {
                 Sleep(1000);
                 continue;
             }
 
-            if (ConnectNamedPipe(pipe, nullptr) || GetLastError() == ERROR_PIPE_CONNECTED) {
-                {
-                    std::lock_guard<std::mutex> lock(m_mutex);
-                    m_pipe = pipe;
-                    m_connected = true;
-                }
-                
+            if (ConnectNamedPipe(m_pipe, nullptr) || GetLastError() == ERROR_PIPE_CONNECTED) {
+                m_connected = true;
                 // Wait until pipe breaks
                 while (!m_stop && m_connected) {
                     Sleep(100);
+                    // Simple check if client is alive
                     DWORD dummy;
-                    if (!GetNamedPipeInfo(pipe, nullptr, nullptr, nullptr, &dummy)) {
-                        break;
+                    if (!GetNamedPipeInfo(m_pipe, nullptr, nullptr, nullptr, &dummy)) {
+                        m_connected = false;
                     }
                 }
-                
-                {
-                    std::lock_guard<std::mutex> lock(m_mutex);
-                    m_connected = false;
-                    m_pipe = INVALID_HANDLE_VALUE;
-                }
             }
-            CloseHandle(pipe);
+            m_connected = false;
+            CloseHandle(m_pipe);
+            m_pipe = INVALID_HANDLE_VALUE;
         }
     }
 
@@ -78,20 +71,15 @@ private:
     HANDLE m_pipe = INVALID_HANDLE_VALUE;
 };
 
-static IPCServer& GetIpc() {
-    static IPCServer s_ipc;
-    return s_ipc;
-}
+IPCServer g_ipc;
 
 class play_callback_livelyric : public play_callback_static {
 public:
     unsigned get_flags() override {
-        return flag_on_playback_new_track | flag_on_playback_starting | flag_on_playback_pause | flag_on_playback_stop | flag_on_playback_seek;
+        return flag_on_playback_new_track | flag_on_playback_play | flag_on_playback_pause | flag_on_playback_stop | flag_on_playback_seek;
     }
 
     void on_playback_new_track(metadb_handle_ptr p_track) override {
-        if (p_track.is_empty()) return;
-
         pfc::string8 path = p_track->get_path();
         if (strncmp(path.get_ptr(), "file://", 7) == 0) path = path.get_ptr() + 7;
         std::string lrcPath = std::string(path.get_ptr());
@@ -103,34 +91,34 @@ public:
         std::string escaped;
         for (char c : lrcPath) {
             if (c == '\\') escaped += "\\\\";
-            else if (c == '"') escaped += "\\\"";
             else escaped += c;
         }
 
-        GetIpc().SendEvent(BuildJsonMsg("new_track", 0.0, escaped.c_str()));
+        g_ipc.SendEvent(BuildJsonMsg("new_track", 0.0, escaped.c_str()));
     }
 
-    void on_playback_starting(play_control::t_track_command p_command, bool p_paused) override {
-        if (!p_paused) {
-            GetIpc().SendEvent(BuildJsonMsg("play", 0.0, ""));
-        }
+    void on_playback_starting(play_control::t_track_command p_command, bool p_paused) override {}
+    
+    void on_playback_play(double p_time) override {
+        g_ipc.SendEvent(BuildJsonMsg("play", p_time, ""));
     }
     
     void on_playback_pause(bool p_state) override {
-        double pos = play_control::get()->playback_get_position();
+        double pos = 0;
+        play_control::get()->playback_get_position(pos);
         if (p_state) {
-            GetIpc().SendEvent(BuildJsonMsg("pause", pos, ""));
+            g_ipc.SendEvent(BuildJsonMsg("pause", pos, ""));
         } else {
-            GetIpc().SendEvent(BuildJsonMsg("play", pos, ""));
+            g_ipc.SendEvent(BuildJsonMsg("play", pos, ""));
         }
     }
     
     void on_playback_stop(play_control::t_stop_reason p_reason) override {
-        GetIpc().SendEvent(BuildJsonMsg("stop", 0.0, ""));
+        g_ipc.SendEvent(BuildJsonMsg("stop", 0.0, ""));
     }
     
     void on_playback_seek(double p_time) override {
-        GetIpc().SendEvent(BuildJsonMsg("seek", p_time, ""));
+        g_ipc.SendEvent(BuildJsonMsg("seek", p_time, ""));
     }
     
     void on_playback_time(double p_time) override {}
