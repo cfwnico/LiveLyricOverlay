@@ -23,7 +23,7 @@ jobs:
         run: |
           msbuild fb2k_sdk_2025\foobar2000\foo_sample\foo_sample.sln `
             /p:Configuration=Release `
-            /p:Platform=x86 `
+            /p:Platform=x64 `
             /p:PlatformToolset=v143 `
             /t:Build `
             /m `
