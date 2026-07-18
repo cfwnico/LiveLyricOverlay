@@ -21,7 +21,7 @@ jobs:
       - name: Build plugin
         shell: pwsh
         run: |
-          msbuild fb2k_sdk\foobar2000\foo_sample\foo_sample.sln `
+          msbuild fb2k_sdk_2025\foobar2000\foo_sample\foo_sample.sln `
             /p:Configuration=Release `
             /p:Platform=x86 `
             /p:PlatformToolset=v143 `
@@ -32,12 +32,12 @@ jobs:
       - name: Verify output
         shell: pwsh
         run: |
-          if (Test-Path "fb2k_sdk\foobar2000\foo_sample\Release\foo_livelyric.dll") {
+          if (Test-Path "fb2k_sdk_2025\foobar2000\foo_sample\Release\foo_livelyric.dll") {
             Write-Host "BUILD SUCCESS: foo_livelyric.dll generated"
-            Get-Item "fb2k_sdk\foobar2000\foo_sample\Release\foo_livelyric.dll" | Format-List Name, Length, LastWriteTime
+            Get-Item "fb2k_sdk_2025\foobar2000\foo_sample\Release\foo_livelyric.dll" | Format-List Name, Length, LastWriteTime
           } else {
             Write-Error "BUILD FAILED: foo_livelyric.dll not found"
-            Get-ChildItem "fb2k_sdk\foobar2000\foo_sample\Release\" -ErrorAction SilentlyContinue
+            Get-ChildItem "fb2k_sdk_2025\foobar2000\foo_sample\Release\" -ErrorAction SilentlyContinue
             exit 1
           }
 
@@ -45,5 +45,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: foo_livelyric
-          path: fb2k_sdk\foobar2000\foo_sample\Release\foo_livelyric.dll
+          path: fb2k_sdk_2025\foobar2000\foo_sample\Release\foo_livelyric.dll
           if-no-files-found: error

@@ -1,4 +1,4 @@
-# Build output directories (any depth)
+# Build output directories
 **/Release/
 **/Debug/
 **/Release FB2K/
@@ -16,21 +16,22 @@
 *.VC.db
 
 # C# build artifacts
-LiveLyricOverlayApp/bin/
-LiveLyricOverlayApp/obj/
-LiveLyricOverlayApp.Tests/bin/
-LiveLyricOverlayApp.Tests/obj/
-LiveLyricOverlayApp.MockFoobar/bin/
-LiveLyricOverlayApp.MockFoobar/obj/
+**/bin/
+**/obj/
 
-# PDB (symbol files are build outputs)
+# PDB
 *.pdb
 
-# Large unnecessary files
-vs_buildtools.exe
-sdk.zip
-fb2k_sdk/foobar2000/foo_input_validator/*.dll
-
-# Temporary files
+# Temp / downloads
 *.tmp
 *.log
+*.7z
+*.zip
+*.nupkg
+*.exe
+wtl_extract/
+wtl_download.zip
+wtl.nupkg
+vs_buildtools.exe
+sdk.zip
+sdk2025.7z
