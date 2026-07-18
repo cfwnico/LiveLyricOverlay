@@ -18,19 +18,16 @@ jobs:
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v2
 
-      - name: Install WTL
+      - name: Clone WTL
         shell: pwsh
         run: |
-          $url = "https://github.com/Microsoft/WTL/archive/refs/tags/10.0.10320.zip"
-          Invoke-WebRequest -Uri $url -OutFile "$env:RUNNER_TEMP\wtl.zip"
-          Expand-Archive -Path "$env:RUNNER_TEMP\wtl.zip" -DestinationPath "$env:RUNNER_TEMP\wtl"
-          echo "WTL_INCLUDE=$env:RUNNER_TEMP\wtl\WTL-10.0.10320\Include" >> $env:GITHUB_ENV
+          git clone --depth 1 --branch 10.0.10320 https://github.com/Microsoft/WTL.git $env:RUNNER_TEMP\wtl
         timeout-minutes: 2
 
       - name: Build plugin
         shell: pwsh
         run: |
-          $env:INCLUDE = "$env:WTL_INCLUDE;$env:INCLUDE"
+          $env:INCLUDE = "$env:RUNNER_TEMP\wtl\Include;$env:INCLUDE"
           msbuild fb2k_sdk\foobar2000\foo_sample\foo_sample.sln `
             /p:Configuration=Release `
             /p:Platform=x86 `
