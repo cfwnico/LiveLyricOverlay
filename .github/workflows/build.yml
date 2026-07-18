@@ -15,20 +15,19 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Checkout WTL
+        uses: actions/checkout@v4
+        with:
+          repository: Microsoft/WTL
+          path: wtl
+
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v2
-
-      - name: Get WTL headers
-        shell: pwsh
-        run: |
-          curl.exe -L -o "$env:RUNNER_TEMP\wtl.zip" "https://github.com/Microsoft/WTL/archive/master.zip"
-          Expand-Archive -Path "$env:RUNNER_TEMP\wtl.zip" -DestinationPath "$env:RUNNER_TEMP\wtl"
-          echo "WTL_INCLUDE=$env:RUNNER_TEMP\wtl\WTL-master\Include" >> $env:GITHUB_ENV
 
       - name: Build plugin
         shell: pwsh
         run: |
-          $env:INCLUDE = "$env:WTL_INCLUDE;$env:INCLUDE"
+          $env:INCLUDE = "${{ github.workspace }}\wtl\Include;$env:INCLUDE"
           msbuild fb2k_sdk\foobar2000\foo_sample\foo_sample.sln `
             /p:Configuration=Release `
             /p:Platform=x86 `
