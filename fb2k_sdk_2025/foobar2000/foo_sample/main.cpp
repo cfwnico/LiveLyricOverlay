@@ -17,6 +17,11 @@ class IPCServer {
 public:
     IPCServer() : m_thread(&IPCServer::Worker, this) {}
     ~IPCServer() {
+        Stop();
+    }
+
+    void Stop() {
+        if (m_stop) return;
         m_stop = true;
         // Connect to unblock WaitNamedPipe
         CallNamedPipeA("\\\\.\\pipe\\LiveLyricOverlayPipe", nullptr, 0, nullptr, 0, nullptr, 1);
@@ -71,11 +76,11 @@ private:
         }
     }
 
-    std::thread m_thread;
     std::mutex m_mutex;
     std::atomic<bool> m_stop{false};
     std::atomic<bool> m_connected{false};
     HANDLE m_pipe = INVALID_HANDLE_VALUE;
+    std::thread m_thread;
 };
 
 static IPCServer& GetIpc() {
@@ -141,3 +146,13 @@ public:
 };
 
 static play_callback_static_factory_t<play_callback_livelyric> g_play_callback;
+
+class livelyric_initquit : public initquit {
+public:
+    void on_init() override {}
+    void on_quit() override {
+        GetIpc().Stop();
+    }
+};
+
+static initquit_factory_t<livelyric_initquit> g_livelyric_initquit;
