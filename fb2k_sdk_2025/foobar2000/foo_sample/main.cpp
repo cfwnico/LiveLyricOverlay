@@ -68,9 +68,15 @@ public:
         EnterCriticalSection(&m_cs);
         if (m_connected && m_pipe != INVALID_HANDLE_VALUE) {
             DWORD written = 0;
-            // Use a short timeout to avoid blocking shutdown.
-            WriteFile(m_pipe, msg.c_str(), (DWORD)msg.length(), &written, nullptr);
-            FlushFileBuffers(m_pipe);
+            OVERLAPPED ov = {};
+            ov.hEvent = CreateEventW(nullptr, TRUE, FALSE, nullptr);
+            BOOL ok = WriteFile(m_pipe, msg.c_str(), (DWORD)msg.length(), &written, &ov);
+            if (!ok && GetLastError() == ERROR_IO_PENDING) {
+                // Wait for the write to complete (short timeout to avoid blocking shutdown)
+                WaitForSingleObject(ov.hEvent, 1000);
+                GetOverlappedResult(m_pipe, &ov, &written, FALSE);
+            }
+            CloseHandle(ov.hEvent);
         }
         LeaveCriticalSection(&m_cs);
     }
@@ -85,9 +91,11 @@ private:
     void Worker() {
         while (!m_stop) {
             // Create pipe with FILE_FLAG_OVERLAPPED to allow cancellable ConnectNamedPipe.
+            // Use PIPE_TYPE_BYTE (not MESSAGE) because the C# client reads with StreamReader
+            // which expects a continuous byte stream, not discrete messages.
             HANDLE pipe = CreateNamedPipeA("\\\\.\\pipe\\LiveLyricOverlayPipe",
                 PIPE_ACCESS_OUTBOUND | FILE_FLAG_OVERLAPPED,
-                PIPE_TYPE_MESSAGE | PIPE_READMODE_MESSAGE | PIPE_WAIT,
+                PIPE_TYPE_BYTE | PIPE_READMODE_BYTE | PIPE_WAIT,
                 1, 4096, 4096, 0, nullptr);
             
             if (pipe == INVALID_HANDLE_VALUE) {
@@ -215,7 +223,12 @@ public:
             else escaped += c;
         }
 
-        if (g_ipc) g_ipc->SendEvent(BuildJsonMsg("new_track", 0.0, escaped.c_str()));
+        if (g_ipc) {
+            g_ipc->SendEvent(BuildJsonMsg("new_track", 0.0, escaped.c_str()));
+            // foobar2000 immediately starts playing the new track,
+            // so also send a "play" event to start the client's stopwatch.
+            g_ipc->SendEvent(BuildJsonMsg("play", 0.0, ""));
+        }
     }
 
     void on_playback_starting(play_control::t_track_command p_command, bool p_paused) override {

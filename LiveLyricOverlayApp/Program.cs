@@ -66,11 +66,12 @@ namespace LiveLyricOverlayApp
                     case "new_track":
                         try {
                             _document = LyricParser.Parse(e.FilePath);
-                            _stopwatch.Reset();
                             _baseTimeSeconds = 0;
+                            _stopwatch.Restart(); // new track starts playing immediately
                             Console.WriteLine($"Loaded new LRC: {e.FilePath}");
                         } catch (Exception ex) {
                             _document = null;
+                            _stopwatch.Reset();
                             Console.WriteLine("Failed to load LRC: " + ex.Message);
                         }
                         break;
