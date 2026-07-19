@@ -17,6 +17,11 @@ namespace LiveLyricOverlayApp.Engine
         {
             var document = new LyricDocument();
             
+            // Normalize foobar2000 path format:
+            // - URL-decode (%20 → space, %E4%B8%AD → 中, etc.)
+            // - Convert forward slashes to backslashes for Windows
+            filePath = Uri.UnescapeDataString(filePath).Replace('/', '\\');
+
             // Register provider for GBK
             Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
             

@@ -34,29 +34,43 @@ namespace LiveLyricOverlayApp.Engine
         {
             while (!_cts.IsCancellationRequested)
             {
+                NamedPipeClientStream? client = null;
                 try
                 {
-                    using var client = new NamedPipeClientStream(".", "LiveLyricOverlayPipe", PipeDirection.In, PipeOptions.Asynchronous);
+                    client = new NamedPipeClientStream(".", "LiveLyricOverlayPipe", PipeDirection.In, PipeOptions.Asynchronous);
                     await client.ConnectAsync(_cts.Token);
                     using var reader = new StreamReader(client, Encoding.UTF8);
 
                     while (client.IsConnected && !_cts.IsCancellationRequested)
                     {
-                        var line = await reader.ReadLineAsync();
-                        if (line != null)
+                        // ReadLineAsync has no CancellationToken overload on .NET 8.
+                        // Use Task.WhenAny to make it cancellable.
+                        var readTask = reader.ReadLineAsync();
+                        var cancelTask = Task.Delay(Timeout.Infinite, _cts.Token);
+                        var completed = await Task.WhenAny(readTask, cancelTask);
+
+                        if (completed == cancelTask)
                         {
-                            try
+                            // Cancellation requested — dispose the pipe to unblock ReadLineAsync
+                            client.Dispose();
+                            client = null;
+                            break;
+                        }
+
+                        var line = await readTask;
+                        if (line == null) break; // pipe closed / EOF
+
+                        try
+                        {
+                            var msg = JsonSerializer.Deserialize<PlaybackEvent>(line, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                            if (msg != null)
                             {
-                                var msg = JsonSerializer.Deserialize<PlaybackEvent>(line, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-                                if (msg != null)
-                                {
-                                    OnPlaybackEvent?.Invoke(this, msg);
-                                }
+                                OnPlaybackEvent?.Invoke(this, msg);
                             }
-                            catch (Exception ex)
-                            {
-                                Console.WriteLine("IPC Parse Error: " + ex.Message);
-                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine("IPC Parse Error: " + ex.Message);
                         }
                     }
                 }
@@ -67,9 +81,20 @@ namespace LiveLyricOverlayApp.Engine
                 catch (Exception)
                 {
                     // Connection failed or pipe broken, retry in a bit
-                    await Task.Delay(1000, _cts.Token);
+                }
+                finally
+                {
+                    client?.Dispose();
+                }
+
+                // Retry delay (cancellation-aware)
+                if (!_cts.IsCancellationRequested)
+                {
+                    try { await Task.Delay(1000, _cts.Token); }
+                    catch (OperationCanceledException) { break; }
                 }
             }
         }
     }
 }
+

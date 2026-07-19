@@ -6,7 +6,10 @@ namespace LiveLyricOverlayApp
     public class LayeredWindow : IDisposable
     {
         private const string WindowClassName = "LiveLyricOverlayClass";
+        private static bool _classRegistered = false;
+        private readonly WndProcDelegate _wndProcDelegate; // prevent GC collection
         private IntPtr _hwnd;
+        private IntPtr _hInstance;
         private int _width;
         private int _height;
 
@@ -23,10 +26,12 @@ namespace LiveLyricOverlayApp
             WNDCLASSEX wcex = new WNDCLASSEX();
             wcex.cbSize = (uint)Marshal.SizeOf(typeof(WNDCLASSEX));
             wcex.style = CS_HREDRAW | CS_VREDRAW;
-            wcex.lpfnWndProc = Marshal.GetFunctionPointerForDelegate((WndProcDelegate)WndProc);
+            _wndProcDelegate = WndProc;
+            wcex.lpfnWndProc = Marshal.GetFunctionPointerForDelegate(_wndProcDelegate);
             wcex.cbClsExtra = 0;
             wcex.cbWndExtra = 0;
-            wcex.hInstance = GetModuleHandle(string.Empty);
+            _hInstance = GetModuleHandle(string.Empty);
+            wcex.hInstance = _hInstance;
             wcex.hIcon = IntPtr.Zero;
             wcex.hCursor = LoadCursor(IntPtr.Zero, IDC_ARROW);
             wcex.hbrBackground = IntPtr.Zero; // No background brush, we paint everything
@@ -34,7 +39,11 @@ namespace LiveLyricOverlayApp
             wcex.lpszClassName = WindowClassName;
             wcex.hIconSm = IntPtr.Zero;
 
-            RegisterClassEx(ref wcex);
+            if (!_classRegistered)
+            {
+                if (RegisterClassEx(ref wcex) != 0)
+                    _classRegistered = true;
+            }
 
             // Extended styles for a transparent, click-through, always-on-top window.
             // Removed WS_EX_TOOLWINDOW so it shows up in Taskbar and OBS/Bilibili window capture lists.
@@ -80,8 +89,16 @@ namespace LiveLyricOverlayApp
             IntPtr pBits;
             IntPtr hBitmap = CreateDIBSection(hdcMemory, ref bmi, DIB_RGB_COLORS, out pBits, IntPtr.Zero, 0);
 
+            if (hBitmap == IntPtr.Zero || pBits == IntPtr.Zero)
+            {
+                // GDI resource exhaustion — skip this frame
+                DeleteDC(hdcMemory);
+                ReleaseDC(IntPtr.Zero, hdcScreen);
+                return;
+            }
+
             // Copy pixels from Skia surface (bgraPixels) to DIB section (pBits)
-            if (bgraPixels != IntPtr.Zero && pBits != IntPtr.Zero)
+            if (bgraPixels != IntPtr.Zero)
             {
                 unsafe
                 {
@@ -140,6 +157,11 @@ namespace LiveLyricOverlayApp
             {
                 DestroyWindow(_hwnd);
                 _hwnd = IntPtr.Zero;
+            }
+            if (_classRegistered)
+            {
+                UnregisterClass(WindowClassName, _hInstance);
+                _classRegistered = false;
             }
         }
 
@@ -289,6 +311,9 @@ namespace LiveLyricOverlayApp
 
         [DllImport("kernel32.dll", CharSet = CharSet.Auto)]
         public static extern IntPtr GetModuleHandle(string lpModuleName);
+
+        [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
+        static extern bool UnregisterClass(string lpClassName, IntPtr hInstance);
 
         const int SW_SHOW = 5;
     }
