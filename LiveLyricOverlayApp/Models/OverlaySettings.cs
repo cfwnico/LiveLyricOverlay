@@ -29,20 +29,33 @@ namespace LiveLyricOverlayApp.Models
 
         public static OverlaySettings Load(string path)
         {
-            try
+            if (!File.Exists(path))
             {
-                if (File.Exists(path))
+                var defaultSettings = new OverlaySettings();
+                defaultSettings.Save(path);
+                return defaultSettings;
+            }
+
+            // Retry loop for file lock / concurrent write access
+            for (int i = 0; i < 5; i++)
+            {
+                try
                 {
                     string json = File.ReadAllText(path);
                     var settings = JsonSerializer.Deserialize<OverlaySettings>(json);
                     if (settings != null) return settings;
                 }
+                catch (IOException)
+                {
+                    System.Threading.Thread.Sleep(100);
+                }
+                catch
+                {
+                    break; // Parsing error, stop retrying
+                }
             }
-            catch { }
 
-            var defaultSettings = new OverlaySettings();
-            defaultSettings.Save(path);
-            return defaultSettings;
+            return new OverlaySettings();
         }
 
         public void Save(string path)

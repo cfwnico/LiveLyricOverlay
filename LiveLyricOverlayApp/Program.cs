@@ -93,6 +93,11 @@ namespace LiveLyricOverlayApp
             _configWatcher.Dispose();
             _ipcClient.Stop();
             _window.Dispose();
+
+            // Clean up cached Skia resources on exit
+            s_cachedMainFont?.Dispose();
+            s_cachedSubFont?.Dispose();
+            s_cachedTypeface?.Dispose();
         }
 
         private static void OnPlaybackEvent(object? sender, PlaybackEvent e)
@@ -220,7 +225,7 @@ namespace LiveLyricOverlayApp
                 // Apply drop shadow if enabled
                 if (settings.ShadowEnabled)
                 {
-                    SKColor shadowCol = SKColor.Parse(settings.ShadowColor);
+                    SKColor shadowCol = ParseColor(settings.ShadowColor, SKColors.HotPink);
                     float shadowRad = settings.ShadowRadius * dpiScale;
                     float shadowOx = settings.ShadowOffsetX * dpiScale;
                     float shadowOy = settings.ShadowOffsetY * dpiScale;
@@ -259,8 +264,8 @@ namespace LiveLyricOverlayApp
                 SKShader? highlightShader = null;
                 try
                 {
-                    SKColor textCol = SKColor.Parse(settings.TextColor);
-                    SKColor textGradCol = SKColor.Parse(settings.TextGradientEndColor);
+                    SKColor textCol = ParseColor(settings.TextColor, SKColors.White);
+                    SKColor textGradCol = ParseColor(settings.TextGradientEndColor, SKColors.White);
                     if (textCol != textGradCol)
                     {
                         mainShader = SKShader.CreateLinearGradient(
@@ -276,8 +281,8 @@ namespace LiveLyricOverlayApp
                         fillPaint.Color = textCol;
                     }
 
-                    SKColor highlightCol = SKColor.Parse(settings.HighlightColor);
-                    SKColor highlightGradCol = SKColor.Parse(settings.HighlightGradientEndColor);
+                    SKColor highlightCol = ParseColor(settings.HighlightColor, SKColors.HotPink);
+                    SKColor highlightGradCol = ParseColor(settings.HighlightGradientEndColor, SKColors.HotPink);
                     if (highlightCol != highlightGradCol)
                     {
                         highlightShader = SKShader.CreateLinearGradient(
@@ -293,7 +298,7 @@ namespace LiveLyricOverlayApp
                         fillHighlightPaint.Color = highlightCol;
                     }
 
-                    SKColor strokeCol = SKColor.Parse(settings.StrokeColor);
+                    SKColor strokeCol = ParseColor(settings.StrokeColor, SKColors.Black);
                     strokePaint.Color = strokeCol;
                     strokeHighlightPaint.Color = strokeCol;
 
@@ -402,6 +407,15 @@ namespace LiveLyricOverlayApp
             {
                 Interlocked.Exchange(ref _rendering, 0);
             }
+        }
+
+        private static SKColor ParseColor(string hex, SKColor fallback)
+        {
+            if (SKColor.TryParse(hex, out var color))
+            {
+                return color;
+            }
+            return fallback;
         }
     }
 }
