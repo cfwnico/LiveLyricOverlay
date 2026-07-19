@@ -14,7 +14,9 @@ std::string BuildJsonMsg(const char* eventType, double time, const char* filePat
     msg += timeBuf;
     msg += ",\"FilePath\":\"";
     msg += filePath;
-    msg += "\"}\n";
+    msg += "\",\"IsPlaying\":";
+    msg += (play_control::get()->is_playing() && !play_control::get()->is_paused()) ? "true" : "false";
+    msg += "}\n";
     return msg;
 }
 
@@ -65,6 +67,7 @@ public:
     }
 
     void SendEvent(const std::string& msg) {
+        FB2K_console_formatter() << "LiveLyricOverlay: Sending event: " << msg.c_str();
         EnterCriticalSection(&m_cs);
         if (m_connected && m_pipe != INVALID_HANDLE_VALUE) {
             DWORD written = 0;
@@ -72,11 +75,23 @@ public:
             ov.hEvent = CreateEventW(nullptr, TRUE, FALSE, nullptr);
             BOOL ok = WriteFile(m_pipe, msg.c_str(), (DWORD)msg.length(), &written, &ov);
             if (!ok && GetLastError() == ERROR_IO_PENDING) {
-                // Wait for the write to complete (short timeout to avoid blocking shutdown)
-                WaitForSingleObject(ov.hEvent, 1000);
-                GetOverlappedResult(m_pipe, &ov, &written, FALSE);
+                if (WaitForSingleObject(ov.hEvent, 1000) == WAIT_TIMEOUT) {
+                    console::print("LiveLyricOverlay: WriteFile timeout.");
+                    CancelIoEx(m_pipe, &ov);
+                    m_connected = false;
+                } else {
+                    if (!GetOverlappedResult(m_pipe, &ov, &written, FALSE)) {
+                        console::print("LiveLyricOverlay: GetOverlappedResult failed on write.");
+                        m_connected = false;
+                    }
+                }
+            } else if (!ok) {
+                console::print("LiveLyricOverlay: WriteFile failed immediately.");
+                m_connected = false;
             }
             CloseHandle(ov.hEvent);
+        } else {
+            FB2K_console_formatter() << "LiveLyricOverlay: Skip sending event (not connected).";
         }
         LeaveCriticalSection(&m_cs);
     }
@@ -90,11 +105,9 @@ private:
 
     void Worker() {
         while (!m_stop) {
-            // Create pipe with FILE_FLAG_OVERLAPPED to allow cancellable ConnectNamedPipe.
-            // Use PIPE_TYPE_BYTE (not MESSAGE) because the C# client reads with StreamReader
-            // which expects a continuous byte stream, not discrete messages.
+            // Create pipe for duplex stream (required for PeekNamedPipe to have read access on the server end)
             HANDLE pipe = CreateNamedPipeA("\\\\.\\pipe\\LiveLyricOverlayPipe",
-                PIPE_ACCESS_OUTBOUND | FILE_FLAG_OVERLAPPED,
+                PIPE_ACCESS_DUPLEX,
                 PIPE_TYPE_BYTE | PIPE_READMODE_BYTE | PIPE_WAIT,
                 1, 4096, 4096, 0, nullptr);
             
@@ -104,64 +117,41 @@ private:
                 continue;
             }
 
-            // Store the pipe handle so Stop() can cancel I/O on it.
+            // Store the pipe handle so Stop() can close/cancel it.
             EnterCriticalSection(&m_cs);
             m_pipe = pipe;
             LeaveCriticalSection(&m_cs);
 
-            // Use overlapped ConnectNamedPipe so we can cancel it via the stop event.
-            OVERLAPPED ov = {};
-            ov.hEvent = CreateEventW(nullptr, TRUE, FALSE, nullptr);
-            
-            bool clientConnected = false;
-            BOOL connectResult = ConnectNamedPipe(pipe, &ov);
-            if (connectResult) {
-                clientConnected = true;
-            } else {
+            // Synchronous block waiting for client connection
+            BOOL connected = ConnectNamedPipe(pipe, nullptr);
+            if (!connected) {
                 DWORD err = GetLastError();
                 if (err == ERROR_PIPE_CONNECTED) {
-                    clientConnected = true;
-                } else if (err == ERROR_IO_PENDING) {
-                    // Wait for either a client connection or the stop signal.
-                    HANDLE waitHandles[2] = { ov.hEvent, m_stopEvent };
-                    DWORD waitResult = WaitForMultipleObjects(2, waitHandles, FALSE, INFINITE);
-                    if (waitResult == WAIT_OBJECT_0) {
-                        // Overlapped connect completed.
-                        DWORD dummy;
-                        if (GetOverlappedResult(pipe, &ov, &dummy, FALSE)) {
-                            clientConnected = true;
-                        }
-                    }
-                    // If waitResult == WAIT_OBJECT_0 + 1, the stop event was signaled.
-                    if (!clientConnected) {
-                        CancelIoEx(pipe, &ov);
-                        // Wait for the cancelled I/O to complete.
-                        DWORD dummy;
-                        GetOverlappedResult(pipe, &ov, &dummy, TRUE);
-                    }
+                    connected = TRUE;
                 }
             }
-            CloseHandle(ov.hEvent);
 
-            if (clientConnected && !m_stop) {
+            if (connected && !m_stop) {
+                console::print("LiveLyricOverlay: Client connected to named pipe.");
                 EnterCriticalSection(&m_cs);
                 m_connected = true;
                 LeaveCriticalSection(&m_cs);
                 
                 // Wait until pipe breaks or we're told to stop.
-                while (!m_stop) {
+                while (!m_stop && m_connected) {
                     // Use WaitForSingleObject on the stop event with a timeout
                     // to periodically check pipe health.
                     DWORD wr = WaitForSingleObject(m_stopEvent, 200);
                     if (wr == WAIT_OBJECT_0) break; // stop signaled
 
-                    // Check if pipe is still valid.
-                    DWORD dummy;
-                    if (!GetNamedPipeInfo(pipe, nullptr, nullptr, nullptr, &dummy)) {
+                    // Check if client disconnected using PeekNamedPipe
+                    if (!PeekNamedPipe(pipe, nullptr, 0, nullptr, nullptr, nullptr)) {
+                        console::print("LiveLyricOverlay: PeekNamedPipe failed, client disconnected.");
                         break; // pipe broken
                     }
                 }
                 
+                console::print("LiveLyricOverlay: Cleaning up connection.");
                 EnterCriticalSection(&m_cs);
                 m_connected = false;
                 LeaveCriticalSection(&m_cs);
@@ -254,7 +244,9 @@ public:
         if (g_ipc) g_ipc->SendEvent(BuildJsonMsg("seek", p_time, ""));
     }
     
-    void on_playback_time(double p_time) override {}
+    void on_playback_time(double p_time) override {
+        if (g_ipc) g_ipc->SendEvent(BuildJsonMsg("time", p_time, ""));
+    }
     void on_playback_dynamic_info(const file_info & p_info) override {}
     void on_playback_dynamic_info_track(const file_info & p_info) override {}
     void on_playback_edited(metadb_handle_ptr p_track) override {}

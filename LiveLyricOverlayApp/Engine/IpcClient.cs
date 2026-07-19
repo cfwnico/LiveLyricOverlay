@@ -13,6 +13,7 @@ namespace LiveLyricOverlayApp.Engine
         public string EventType { get; set; } = string.Empty; // "play", "pause", "stop", "seek"
         public double Time { get; set; } // Current time in seconds
         public string FilePath { get; set; } = string.Empty;
+        public bool IsPlaying { get; set; }
     }
 
     public class IpcClient
@@ -37,8 +38,10 @@ namespace LiveLyricOverlayApp.Engine
                 NamedPipeClientStream? client = null;
                 try
                 {
+                    Console.WriteLine("Connecting to named pipe 'LiveLyricOverlayPipe'...");
                     client = new NamedPipeClientStream(".", "LiveLyricOverlayPipe", PipeDirection.In, PipeOptions.Asynchronous);
                     await client.ConnectAsync(_cts.Token);
+                    Console.WriteLine("Successfully connected to foobar2000 named pipe.");
                     using var reader = new StreamReader(client, Encoding.UTF8);
 
                     while (client.IsConnected && !_cts.IsCancellationRequested)
@@ -58,7 +61,13 @@ namespace LiveLyricOverlayApp.Engine
                         }
 
                         var line = await readTask;
-                        if (line == null) break; // pipe closed / EOF
+                        if (line == null)
+                        {
+                            Console.WriteLine("Pipe EOF reached. Client disconnected.");
+                            break; // pipe closed / EOF
+                        }
+
+                        Console.WriteLine($"Raw IPC line received: {line.Trim()}");
 
                         try
                         {
@@ -76,11 +85,12 @@ namespace LiveLyricOverlayApp.Engine
                 }
                 catch (OperationCanceledException)
                 {
+                    Console.WriteLine("IPC cancellation requested.");
                     break;
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
-                    // Connection failed or pipe broken, retry in a bit
+                    Console.WriteLine("IPC Connection failed or lost: " + ex.Message);
                 }
                 finally
                 {

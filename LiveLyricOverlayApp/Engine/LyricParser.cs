@@ -10,29 +10,45 @@ namespace LiveLyricOverlayApp.Engine
 {
     public class LyricParser
     {
-        private static readonly Regex TimeTagRegex = new Regex(@"\[(\d{2,}):(\d{2})(?:[.:](\d{2,3}))?\]", RegexOptions.Compiled);
+        private static readonly Regex TimeTagRegex = new Regex(@"\[(\d{2,}):(\d{2})(?:[.:](\d{1,3}))?\]", RegexOptions.Compiled);
         private static readonly Regex OffsetRegex = new Regex(@"\[offset:\s*([+-]?\d+)\s*\]", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
         public static LyricDocument Parse(string filePath)
         {
             var document = new LyricDocument();
             
+            Console.WriteLine($"LyricParser: Input path from IPC: '{filePath}'");
             // Normalize foobar2000 path format:
             // - URL-decode (%20 → space, %E4%B8%AD → 中, etc.)
             // - Convert forward slashes to backslashes for Windows
+            // - Strip any leading backslash before a drive letter (e.g. \C:\path -> C:\path)
             filePath = Uri.UnescapeDataString(filePath).Replace('/', '\\');
+            if (filePath.StartsWith("\\") && filePath.Length > 2 && filePath[2] == ':')
+            {
+                filePath = filePath.Substring(1);
+            }
+            Console.WriteLine($"LyricParser: Normalized path: '{filePath}'");
+
+            if (!File.Exists(filePath))
+            {
+                Console.WriteLine($"LyricParser: File does NOT exist: '{filePath}'");
+                throw new FileNotFoundException("LRC file not found", filePath);
+            }
 
             // Register provider for GBK
             Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
             
             string content;
             byte[] bytes = File.ReadAllBytes(filePath);
+            Console.WriteLine($"LyricParser: Read {bytes.Length} bytes.");
             if (IsUtf8(bytes))
             {
+                Console.WriteLine("LyricParser: Encoding is UTF-8.");
                 content = Encoding.UTF8.GetString(bytes);
             }
             else
             {
+                Console.WriteLine("LyricParser: Encoding is GBK.");
                 // Fallback to GBK/System Default
                 content = Encoding.GetEncoding("GBK").GetString(bytes);
             }
@@ -102,6 +118,7 @@ namespace LiveLyricOverlayApp.Engine
             }
 
             document.Lines = mergedLines;
+            Console.WriteLine($"LyricParser: Successfully parsed {mergedLines.Count} lyric lines.");
             return document;
         }
 

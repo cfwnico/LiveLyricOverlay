@@ -59,6 +59,7 @@ namespace LiveLyricOverlayApp
 
         private static void OnPlaybackEvent(object? sender, PlaybackEvent e)
         {
+            Console.WriteLine($"[Event Received] Type={e.EventType}, Time={e.Time:F3}s, IsPlaying={e.IsPlaying}, Path={e.FilePath}");
             lock (_stateLock)
             {
                 switch (e.EventType)
@@ -66,32 +67,25 @@ namespace LiveLyricOverlayApp
                     case "new_track":
                         try {
                             _document = LyricParser.Parse(e.FilePath);
-                            _baseTimeSeconds = 0;
-                            _stopwatch.Restart(); // new track starts playing immediately
                             Console.WriteLine($"Loaded new LRC: {e.FilePath}");
                         } catch (Exception ex) {
                             _document = null;
-                            _stopwatch.Reset();
                             Console.WriteLine("Failed to load LRC: " + ex.Message);
                         }
                         break;
-                    case "play":
-                        _baseTimeSeconds = e.Time;
-                        _stopwatch.Restart();
-                        break;
-                    case "pause":
-                        _baseTimeSeconds = e.Time;
-                        _stopwatch.Stop();
-                        break;
                     case "stop":
                         _document = null;
-                        _stopwatch.Reset();
                         break;
-                    case "seek":
-                    case "time":
-                        _baseTimeSeconds = e.Time;
-                        _stopwatch.Restart(); // Resync time accurately
-                        break;
+                }
+
+                _baseTimeSeconds = e.Time;
+                if (e.IsPlaying)
+                {
+                    _stopwatch.Restart();
+                }
+                else
+                {
+                    _stopwatch.Reset();
                 }
             }
         }
@@ -127,7 +121,8 @@ namespace LiveLyricOverlayApp
 
                 if (doc != null && doc.Lines.Count > 0)
                 {
-                    var activeLine = doc.Lines.LastOrDefault(l => l.TimeMs <= currentMs);
+                    int adjustedMs = currentMs - doc.OffsetMs;
+                    var activeLine = doc.Lines.LastOrDefault(l => l.TimeMs <= adjustedMs);
                     if (activeLine != null)
                     {
                         text = activeLine.Text;
