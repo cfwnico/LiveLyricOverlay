@@ -13,6 +13,8 @@ namespace LiveLyricOverlayApp.Engine
         private static readonly Regex TimeTagRegex = new Regex(@"\[(\d{2,}):(\d{2})(?:[.:](\d{1,3}))?\]", RegexOptions.Compiled);
         private static readonly Regex OffsetRegex = new Regex(@"\[offset:\s*([+-]?\d+)\s*\]", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
+        private static readonly Regex WordTagRegex = new Regex(@"[<(](\d{2,}):(\d{2})[.:](\d{1,3})[>)]|[<(](\d+)(?:,(\d+))?[>)]", RegexOptions.Compiled);
+
         public static LyricDocument Parse(string filePath)
         {
             var document = new LyricDocument();
@@ -92,7 +94,13 @@ namespace LiveLyricOverlayApp.Engine
                         }
                         
                         int timeMs = min * 60 * 1000 + sec * 1000 + ms;
-                        rawLines.Add(new LyricLine { TimeMs = timeMs, Text = text });
+
+                        // Parse word-by-word timestamps
+                        string cleanText;
+                        List<LyricWord> words;
+                        ParseWords(text, timeMs, out cleanText, out words);
+
+                        rawLines.Add(new LyricLine { TimeMs = timeMs, Text = cleanText, Words = words });
                     }
                 }
             }
@@ -108,6 +116,7 @@ namespace LiveLyricOverlayApp.Engine
                 if (i < rawLines.Count - 1 && Math.Abs(rawLines[i + 1].TimeMs - current.TimeMs) <= 10)
                 {
                     current.Translation = rawLines[i + 1].Text;
+                    // If the translation line also had words parsed, clear/ignore its words
                     mergedLines.Add(current);
                     i++; // skip next line
                 }
@@ -117,9 +126,133 @@ namespace LiveLyricOverlayApp.Engine
                 }
             }
 
+            // Smart detection of bilingual lyrics
+            int bilingualCount = 0;
+            foreach (var line in mergedLines)
+            {
+                if (!string.IsNullOrWhiteSpace(line.Translation))
+                {
+                    bilingualCount++;
+                }
+            }
+            if (mergedLines.Count > 0 && (double)bilingualCount / mergedLines.Count > 0.1)
+            {
+                document.IsBilingual = true;
+                Console.WriteLine("LyricParser: Detected bilingual lyrics document.");
+            }
+
             document.Lines = mergedLines;
             Console.WriteLine($"LyricParser: Successfully parsed {mergedLines.Count} lyric lines.");
             return document;
+        }
+
+        private static void ParseWords(string lineText, int lineStartMs, out string cleanText, out List<LyricWord> words)
+        {
+            var matches = WordTagRegex.Matches(lineText);
+            if (matches.Count > 0)
+            {
+                var tempWords = new List<LyricWord>();
+                var sbClean = new StringBuilder();
+                int lastIdx = 0;
+
+                // Extract all raw word times first to compute offset
+                var rawWordTimes = new List<int>();
+                for (int idx = 0; idx < matches.Count; idx++)
+                {
+                    var m = matches[idx];
+                    int tMs = 0;
+                    if (m.Groups[1].Success)
+                    {
+                        int min = int.Parse(m.Groups[1].Value);
+                        int sec = int.Parse(m.Groups[2].Value);
+                        int ms = 0;
+                        string msStr = m.Groups[3].Value;
+                        if (msStr.Length == 2) ms = int.Parse(msStr) * 10;
+                        else if (msStr.Length == 3) ms = int.Parse(msStr);
+                        else if (msStr.Length == 1) ms = int.Parse(msStr) * 100;
+                        tMs = min * 60 * 1000 + sec * 1000 + ms;
+                    }
+                    else if (m.Groups[4].Success)
+                    {
+                        tMs = int.Parse(m.Groups[4].Value);
+                    }
+                    rawWordTimes.Add(tMs);
+                }
+
+                int firstWordTimeMs = rawWordTimes.Count > 0 ? rawWordTimes[0] : 0;
+
+                for (int idx = 0; idx < matches.Count; idx++)
+                {
+                    var currentMatch = matches[idx];
+                    if (currentMatch.Index > lastIdx)
+                    {
+                        string wordVal = lineText.Substring(lastIdx, currentMatch.Index - lastIdx);
+                        if (tempWords.Count > 0)
+                        {
+                            tempWords[tempWords.Count - 1].Text = wordVal;
+                        }
+                        else
+                        {
+                            sbClean.Append(wordVal);
+                        }
+                    }
+
+                    int wordTimeMs = lineStartMs + (rawWordTimes[idx] - firstWordTimeMs);
+                    int wordDurationMs = 0;
+                    if (currentMatch.Groups[5].Success)
+                    {
+                        wordDurationMs = int.Parse(currentMatch.Groups[5].Value);
+                    }
+
+                    tempWords.Add(new LyricWord
+                    {
+                        TimeMs = wordTimeMs,
+                        DurationMs = wordDurationMs,
+                        Text = string.Empty
+                    });
+
+                    lastIdx = currentMatch.Index + currentMatch.Length;
+                }
+
+                if (lastIdx < lineText.Length)
+                {
+                    string lastVal = lineText.Substring(lastIdx);
+                    if (tempWords.Count > 0)
+                    {
+                        tempWords[tempWords.Count - 1].Text = lastVal;
+                    }
+                }
+
+                var finalWords = new List<LyricWord>();
+                foreach (var w in tempWords)
+                {
+                    sbClean.Append(w.Text);
+                    finalWords.Add(w);
+                }
+
+                for (int i = 0; i < finalWords.Count; i++)
+                {
+                    if (finalWords[i].DurationMs == 0)
+                    {
+                        if (i < finalWords.Count - 1)
+                        {
+                            finalWords[i].DurationMs = Math.Max(0, finalWords[i + 1].TimeMs - finalWords[i].TimeMs);
+                        }
+                        else
+                        {
+                            finalWords[i].DurationMs = 500;
+                        }
+                    }
+                }
+
+                cleanText = sbClean.ToString().Trim();
+                words = finalWords;
+            }
+            else
+            {
+                cleanText = lineText;
+                words = new List<LyricWord>();
+            }
         }
 
         private static bool IsUtf8(byte[] bytes)

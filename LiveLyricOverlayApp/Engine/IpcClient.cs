@@ -38,10 +38,10 @@ namespace LiveLyricOverlayApp.Engine
                 NamedPipeClientStream? client = null;
                 try
                 {
-                    Console.WriteLine("Connecting to named pipe 'LiveLyricOverlayPipe'...");
+                    Console.WriteLine(LocaleManager.Get("IpcConnecting"));
                     client = new NamedPipeClientStream(".", "LiveLyricOverlayPipe", PipeDirection.In, PipeOptions.Asynchronous);
                     await client.ConnectAsync(_cts.Token);
-                    Console.WriteLine("Successfully connected to foobar2000 named pipe.");
+                    Console.WriteLine(LocaleManager.Get("IpcConnected"));
                     using var reader = new StreamReader(client, Encoding.UTF8);
 
                     while (client.IsConnected && !_cts.IsCancellationRequested)
@@ -63,7 +63,7 @@ namespace LiveLyricOverlayApp.Engine
                         var line = await readTask;
                         if (line == null)
                         {
-                            Console.WriteLine("Pipe EOF reached. Client disconnected.");
+                            Console.WriteLine(LocaleManager.Get("IpcDisconnected"));
                             break; // pipe closed / EOF
                         }
 

@@ -70,6 +70,38 @@ namespace LiveLyricOverlayApp
             ShowWindow(_hwnd, SW_SHOW);
         }
 
+        public void Resize(int width, int height)
+        {
+            _width = width;
+            _height = height;
+            SetWindowPos(_hwnd, IntPtr.Zero, 0, 0, width, height, SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE);
+        }
+
+        public void SetBounds(int x, int y, int width, int height)
+        {
+            _width = width;
+            _height = height;
+            SetWindowPos(_hwnd, IntPtr.Zero, x, y, width, height, SWP_NOZORDER | SWP_NOACTIVATE);
+        }
+
+        public float GetDpiScale()
+        {
+            try
+            {
+                uint dpi = GetDpiForWindow(_hwnd);
+                if (dpi > 0) return dpi / 96.0f;
+            }
+            catch (EntryPointNotFoundException)
+            {
+                IntPtr hdc = GetDC(IntPtr.Zero);
+                int dpiX = GetDeviceCaps(hdc, LOGPIXELSX);
+                ReleaseDC(IntPtr.Zero, hdc);
+                if (dpiX > 0) return dpiX / 96.0f;
+            }
+            catch { }
+            return 1.0f;
+        }
+
         public void UpdatePixels(IntPtr bgraPixels, int width, int height)
         {
             IntPtr hdcScreen = GetDC(IntPtr.Zero);
@@ -314,6 +346,21 @@ namespace LiveLyricOverlayApp
 
         [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
         static extern bool UnregisterClass(string lpClassName, IntPtr hInstance);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        static extern uint GetDpiForWindow(IntPtr hwnd);
+
+        [DllImport("gdi32.dll")]
+        static extern int GetDeviceCaps(IntPtr hdc, int nIndex);
+
+        const int LOGPIXELSX = 88;
+
+        [DllImport("user32.dll", SetLastError = true)]
+        static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int X, int Y, int cx, int cy, uint uFlags);
+
+        const uint SWP_NOMOVE = 0x0002;
+        const uint SWP_NOZORDER = 0x0004;
+        const uint SWP_NOACTIVATE = 0x0010;
 
         const int SW_SHOW = 5;
     }
