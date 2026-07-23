@@ -18,6 +18,7 @@ namespace LiveLyricOverlayApp
         private static Stopwatch _stopwatch = new Stopwatch();
         private static LyricDocument? _document;
         private static double _baseTimeSeconds = 0;
+        private static string _currentFileName = "";
 
         private static IpcClient? _ipcClient;
         private static int _rendering = 0; // reentrant guard for RenderCallback
@@ -115,9 +116,19 @@ namespace LiveLyricOverlayApp
                             _document = null;
                             Console.WriteLine(LocaleManager.Get("LrcLoadFailed", ex.Message));
                         }
+                        
+                        if (!string.IsNullOrEmpty(e.FilePath))
+                        {
+                            _currentFileName = System.IO.Path.GetFileNameWithoutExtension(e.FilePath);
+                        }
+                        else
+                        {
+                            _currentFileName = "";
+                        }
                         break;
                     case "stop":
                         _document = null;
+                        _currentFileName = "";
                         break;
                 }
 
@@ -146,12 +157,14 @@ namespace LiveLyricOverlayApp
                 int currentMs;
                 OverlaySettings settings;
                 float dpiScale;
+                string currentFileName;
                 lock (_stateLock)
                 {
                     doc = _document;
                     currentMs = (int)(_baseTimeSeconds * 1000) + (int)_stopwatch.ElapsedMilliseconds;
                     settings = _settings;
                     dpiScale = _dpiScale;
+                    currentFileName = _currentFileName;
                 }
 
                 int width = _window.Width;
@@ -184,7 +197,14 @@ namespace LiveLyricOverlayApp
                 }
                 else
                 {
-                    text = LocaleManager.Get("NoLyrics");
+                    if (!string.IsNullOrEmpty(currentFileName))
+                    {
+                        text = currentFileName;
+                    }
+                    else
+                    {
+                        text = LocaleManager.Get("NoLyrics");
+                    }
                 }
 
                 // Dynamic font caching
@@ -239,6 +259,7 @@ namespace LiveLyricOverlayApp
                 // Measure content bounds
                 var mainBounds = new SKRect();
                 s_cachedMainFont.MeasureText(text, out mainBounds);
+                var subBounds = new SKRect();
 
                 float mainY = 0;
                 float subY = 0;
@@ -246,7 +267,6 @@ namespace LiveLyricOverlayApp
 
                 if (showTranslation)
                 {
-                    var subBounds = new SKRect();
                     s_cachedSubFont.MeasureText(translation, out subBounds);
                     float spacing = 12 * dpiScale;
                     float totalHeight = mainBounds.Height + subBounds.Height + spacing;
@@ -257,6 +277,75 @@ namespace LiveLyricOverlayApp
                 else
                 {
                     mainY = (height - mainBounds.Height) / 2 + mainBounds.Height;
+                }
+
+                // Calculate progress and active width
+                float lineProgress = 0f;
+                float activeWidth = 0f;
+                if (doc != null && doc.Lines.Count > 0)
+                {
+                    int adjustedMs = currentMs - doc.OffsetMs;
+                    var activeLine = doc.Lines.LastOrDefault(l => l.TimeMs <= adjustedMs);
+                    if (activeLine != null)
+                    {
+                        if (activeLine.Words != null && activeLine.Words.Count > 0)
+                        {
+                            int currentWordIdx = -1;
+                            for (int i = 0; i < activeLine.Words.Count; i++)
+                            {
+                                var w = activeLine.Words[i];
+                                if (adjustedMs >= w.TimeMs && adjustedMs < w.TimeMs + w.DurationMs)
+                                {
+                                    currentWordIdx = i;
+                                    break;
+                                }
+                            }
+
+                            if (currentWordIdx != -1)
+                            {
+                                var beforeWords = activeLine.Words.Take(currentWordIdx);
+                                string beforeText = string.Concat(beforeWords.Select(w => w.Text));
+                                float beforeWidth = s_cachedMainFont.MeasureText(beforeText);
+
+                                var currentWord = activeLine.Words[currentWordIdx];
+                                float currentWordWidth = s_cachedMainFont.MeasureText(currentWord.Text);
+                                float p = (float)(adjustedMs - currentWord.TimeMs) / currentWord.DurationMs;
+                                p = Math.Clamp(p, 0f, 1f);
+
+                                activeWidth = beforeWidth + (currentWordWidth * p);
+                            }
+                            else if (adjustedMs >= activeLine.Words.Last().TimeMs + activeLine.Words.Last().DurationMs)
+                            {
+                                activeWidth = mainBounds.Width;
+                            }
+                            else
+                            {
+                                activeWidth = 0;
+                            }
+                        }
+                        else
+                        {
+                            // Linear sweep fallback
+                            int idx = doc.Lines.IndexOf(activeLine);
+                            int nextLineTimeMs = idx >= 0 && idx < doc.Lines.Count - 1 ? doc.Lines[idx + 1].TimeMs : activeLine.TimeMs + 5000;
+                            int duration = Math.Max(1000, nextLineTimeMs - activeLine.TimeMs);
+                            float p = (float)(adjustedMs - activeLine.TimeMs) / duration;
+                            activeWidth = mainBounds.Width * Math.Clamp(p, 0f, 1f);
+                        }
+                        lineProgress = mainBounds.Width > 0 ? Math.Clamp(activeWidth / mainBounds.Width, 0f, 1f) : 0f;
+                    }
+                }
+
+                float margin = 20 * dpiScale;
+                float mainX;
+                if (mainBounds.Width > width - margin * 2)
+                {
+                    float maxScroll = mainBounds.Width - width + margin * 2;
+                    mainX = margin - (maxScroll * lineProgress) - mainBounds.Left;
+                }
+                else
+                {
+                    mainX = (width - mainBounds.Width) / 2 - mainBounds.Left;
                 }
 
                 // Apply gradient colors or solid colors
@@ -302,8 +391,7 @@ namespace LiveLyricOverlayApp
                     strokePaint.Color = strokeCol;
                     strokeHighlightPaint.Color = strokeCol;
 
-                    // Draw Main Line Background (Centered horizontally)
-                    float mainX = (width - mainBounds.Width) / 2 - mainBounds.Left;
+                    // Draw Main Line Background
                     if (settings.StrokeEnabled)
                     {
                         canvas.DrawText(text, mainX, mainY, SKTextAlign.Left, s_cachedMainFont, strokePaint);
@@ -311,78 +399,31 @@ namespace LiveLyricOverlayApp
                     canvas.DrawText(text, mainX, mainY, SKTextAlign.Left, s_cachedMainFont, fillPaint);
 
                     // Draw Karaoke Highlight Overlay
-                    if (settings.KaraokeEnabled && doc != null && doc.Lines.Count > 0)
+                    if (settings.KaraokeEnabled && activeWidth > 0)
                     {
-                        int adjustedMs = currentMs - doc.OffsetMs;
-                        var activeLine = doc.Lines.LastOrDefault(l => l.TimeMs <= adjustedMs);
-                        if (activeLine != null)
+                        canvas.Save();
+                        canvas.ClipRect(new SKRect(mainX, 0, mainX + activeWidth, height));
+                        if (settings.StrokeEnabled)
                         {
-                            float activeWidth = 0;
-                            if (activeLine.Words != null && activeLine.Words.Count > 0)
-                            {
-                                int currentWordIdx = -1;
-                                for (int i = 0; i < activeLine.Words.Count; i++)
-                                {
-                                    var w = activeLine.Words[i];
-                                    if (adjustedMs >= w.TimeMs && adjustedMs < w.TimeMs + w.DurationMs)
-                                    {
-                                        currentWordIdx = i;
-                                        break;
-                                    }
-                                }
-
-                                if (currentWordIdx != -1)
-                                {
-                                    var beforeWords = activeLine.Words.Take(currentWordIdx);
-                                    string beforeText = string.Concat(beforeWords.Select(w => w.Text));
-                                    float beforeWidth = s_cachedMainFont.MeasureText(beforeText);
-
-                                    var currentWord = activeLine.Words[currentWordIdx];
-                                    float currentWordWidth = s_cachedMainFont.MeasureText(currentWord.Text);
-                                    float progress = (float)(adjustedMs - currentWord.TimeMs) / currentWord.DurationMs;
-                                    progress = Math.Clamp(progress, 0f, 1f);
-
-                                    activeWidth = beforeWidth + (currentWordWidth * progress);
-                                }
-                                else if (adjustedMs >= activeLine.Words.Last().TimeMs + activeLine.Words.Last().DurationMs)
-                                {
-                                    activeWidth = mainBounds.Width;
-                                }
-                                else
-                                {
-                                    activeWidth = 0;
-                                }
-                            }
-                            else
-                            {
-                                // Linear sweep fallback
-                                int nextLineTimeMs = doc.Lines.FirstOrDefault(l => l.TimeMs > activeLine.TimeMs)?.TimeMs ?? (activeLine.TimeMs + 5000);
-                                int duration = Math.Max(1000, nextLineTimeMs - activeLine.TimeMs);
-                                float progress = (float)(adjustedMs - activeLine.TimeMs) / duration;
-                                progress = Math.Clamp(progress, 0f, 1f);
-                                activeWidth = mainBounds.Width * progress;
-                            }
-
-                            if (activeWidth > 0)
-                            {
-                                canvas.Save();
-                                canvas.ClipRect(new SKRect(mainX, 0, mainX + activeWidth, height));
-                                if (settings.StrokeEnabled)
-                                {
-                                    canvas.DrawText(text, mainX, mainY, SKTextAlign.Left, s_cachedMainFont, strokeHighlightPaint);
-                                }
-                                canvas.DrawText(text, mainX, mainY, SKTextAlign.Left, s_cachedMainFont, fillHighlightPaint);
-                                canvas.Restore();
-                            }
+                            canvas.DrawText(text, mainX, mainY, SKTextAlign.Left, s_cachedMainFont, strokeHighlightPaint);
                         }
+                        canvas.DrawText(text, mainX, mainY, SKTextAlign.Left, s_cachedMainFont, fillHighlightPaint);
+                        canvas.Restore();
                     }
 
                     // Draw Sub Line (Translation) if enabled
                     if (showTranslation)
                     {
-                        var subBounds = new SKRect();
-                        s_cachedSubFont.MeasureText(translation, out subBounds);
-                        float subX = (width - subBounds.Width) / 2 - subBounds.Left;
+                        float subX;
+                        if (subBounds.Width > width - margin * 2)
+                        {
+                            float maxScroll = subBounds.Width - width + margin * 2;
+                            subX = margin - (maxScroll * lineProgress) - subBounds.Left;
+                        }
+                        else
+                        {
+                            subX = (width - subBounds.Width) / 2 - subBounds.Left;
+                        }
 
                         if (settings.StrokeEnabled)
                         {
